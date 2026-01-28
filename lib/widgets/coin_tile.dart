@@ -23,30 +23,48 @@ class CoinTile extends StatelessWidget {
       },
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
 
-      // --- LOGO SECTION ---
-      leading: CircleAvatar(
-        backgroundColor: AppTheme.cardColor, // Background color of the circle
-        radius: 24, // Optional: Adjust size if needed
-        child: Padding(
-          padding: const EdgeInsets.all(8.0), // Adds space around the logo
+      // --- FIXED LOGO SECTION ---
+      leading: Container(
+        width: 48,
+        height: 48,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: Colors
+              .white, // Adds a white background if the image is transparent
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 4,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: ClipOval(
           child: Image.asset(
-            coin.imagePath, // Uses the path directly from the model
-            fit: BoxFit.contain,
+            coin.imagePath,
+            fit: BoxFit.cover, // This "crops" the square into a circle
             errorBuilder: (context, error, stackTrace) {
-              // Fallback if image is missing: Show first letter
-              return Text(
-                coin.symbol[0],
-                style: const TextStyle(fontWeight: FontWeight.bold),
+              return Center(
+                child: Text(
+                  coin.symbol[0],
+                  style: const TextStyle(
+                    color: Colors.black,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
               );
             },
           ),
         ),
       ),
 
-      // --------------------
+      // -------------------------
       title: Text(
         coin.name,
-        style: const TextStyle(fontWeight: FontWeight.bold),
+        style: const TextStyle(
+          fontWeight: FontWeight.bold,
+          color: Colors.white,
+        ),
       ),
       subtitle: Text(
         coin.symbol,
@@ -58,7 +76,11 @@ class CoinTile extends StatelessWidget {
         children: [
           Text(
             currencyFormatter.format(coin.price),
-            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+            style: const TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 16,
+              color: Colors.white,
+            ),
           ),
           Text(
             "${isPositive ? '+' : ''}${coin.changePercentage}%",

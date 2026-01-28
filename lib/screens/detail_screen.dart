@@ -15,28 +15,38 @@ class DetailScreen extends StatelessWidget {
     final isPositive = coin.changePercentage >= 0;
 
     return Scaffold(
-      appBar: AppBar(title: Text(coin.name)),
+      backgroundColor: Colors.black,
+      appBar: AppBar(
+        title: Text(coin.name),
+        backgroundColor: Colors.black,
+        elevation: 0,
+      ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
-            // Header Info
             Center(
               child: Column(
                 children: [
-                  CircleAvatar(
-                    radius: 30,
-                    backgroundColor: AppTheme.cardColor,
-                    child: Text(
-                      coin.symbol,
-                      style: const TextStyle(color: Colors.white, fontSize: 18),
+                  // --- FIXED LARGE LOGO ---
+                  Container(
+                    width: 80,
+                    height: 80,
+                    decoration: const BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Colors.white,
+                    ),
+                    child: ClipOval(
+                      child: Image.asset(coin.imagePath, fit: BoxFit.cover),
                     ),
                   ),
+                  // ------------------------
                   const SizedBox(height: 16),
                   Text(
                     currencyFormatter.format(coin.price),
                     style: const TextStyle(
                       fontSize: 32,
+                      color: Colors.white,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -54,8 +64,6 @@ class DetailScreen extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 40),
-
-            // Chart
             SizedBox(
               height: 250,
               width: double.infinity,
@@ -64,25 +72,22 @@ class DetailScreen extends StatelessWidget {
                 isPositive: isPositive,
               ),
             ),
-
             const Spacer(),
-
-            // Buy Button
             SizedBox(
               width: double.infinity,
-              height: 50,
+              height: 56,
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppTheme.primaryGreen,
                   foregroundColor: Colors.black,
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(16),
                   ),
                 ),
                 onPressed: () {},
                 child: const Text(
                   "Buy Now",
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
                 ),
               ),
             ),

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../models/crypto_coin.dart';
-import '../core/theme.dart';
 import '../screens/detail_screen.dart';
 import 'package:intl/intl.dart';
 
@@ -22,43 +21,26 @@ class CoinTile extends StatelessWidget {
         );
       },
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-
-      // --- FIXED LOGO SECTION ---
       leading: Container(
         width: 48,
         height: 48,
-        decoration: BoxDecoration(
+        decoration: const BoxDecoration(
           shape: BoxShape.circle,
-          color: Colors
-              .white, // Adds a white background if the image is transparent
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.1),
-              blurRadius: 4,
-              offset: const Offset(0, 2),
-            ),
-          ],
+          color: Colors.white,
         ),
         child: ClipOval(
-          child: Image.asset(
-            coin.imagePath,
-            fit: BoxFit.cover, // This "crops" the square into a circle
-            errorBuilder: (context, error, stackTrace) {
-              return Center(
-                child: Text(
-                  coin.symbol[0],
-                  style: const TextStyle(
-                    color: Colors.black,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              );
-            },
+          child: Image.network(
+            coin.imagePath, // CHANGED TO .NETWORK
+            fit: BoxFit.cover,
+            errorBuilder: (context, error, stackTrace) => Center(
+              child: Text(
+                coin.symbol[0],
+                style: const TextStyle(color: Colors.black),
+              ),
+            ),
           ),
         ),
       ),
-
-      // -------------------------
       title: Text(
         coin.name,
         style: const TextStyle(
@@ -66,10 +48,7 @@ class CoinTile extends StatelessWidget {
           color: Colors.white,
         ),
       ),
-      subtitle: Text(
-        coin.symbol,
-        style: const TextStyle(color: AppTheme.secondaryText),
-      ),
+      subtitle: Text(coin.symbol, style: const TextStyle(color: Colors.grey)),
       trailing: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         crossAxisAlignment: CrossAxisAlignment.end,
@@ -83,9 +62,9 @@ class CoinTile extends StatelessWidget {
             ),
           ),
           Text(
-            "${isPositive ? '+' : ''}${coin.changePercentage}%",
+            "${isPositive ? '+' : ''}${coin.changePercentage.toStringAsFixed(2)}%",
             style: TextStyle(
-              color: isPositive ? AppTheme.primaryGreen : AppTheme.primaryRed,
+              color: isPositive ? Colors.greenAccent : Colors.redAccent,
               fontSize: 12,
             ),
           ),

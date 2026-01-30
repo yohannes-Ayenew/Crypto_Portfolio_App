@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../models/crypto_coin.dart';
-import '../core/theme.dart';
 import '../widgets/price_chart.dart';
 
 class DetailScreen extends StatelessWidget {
@@ -19,6 +18,7 @@ class DetailScreen extends StatelessWidget {
       appBar: AppBar(
         title: Text(coin.name),
         backgroundColor: Colors.black,
+        foregroundColor: Colors.white,
         elevation: 0,
       ),
       body: Padding(
@@ -28,7 +28,6 @@ class DetailScreen extends StatelessWidget {
             Center(
               child: Column(
                 children: [
-                  // --- FIXED LARGE LOGO ---
                   Container(
                     width: 80,
                     height: 80,
@@ -37,10 +36,12 @@ class DetailScreen extends StatelessWidget {
                       color: Colors.white,
                     ),
                     child: ClipOval(
-                      child: Image.asset(coin.imagePath, fit: BoxFit.cover),
+                      child: Image.network(
+                        coin.imagePath, // CHANGED TO .NETWORK
+                        fit: BoxFit.cover,
+                      ),
                     ),
                   ),
-                  // ------------------------
                   const SizedBox(height: 16),
                   Text(
                     currencyFormatter.format(coin.price),
@@ -51,11 +52,9 @@ class DetailScreen extends StatelessWidget {
                     ),
                   ),
                   Text(
-                    "${isPositive ? '+' : ''}${coin.changePercentage}%",
+                    "${isPositive ? '+' : ''}${coin.changePercentage.toStringAsFixed(2)}%",
                     style: TextStyle(
-                      color: isPositive
-                          ? AppTheme.primaryGreen
-                          : AppTheme.primaryRed,
+                      color: isPositive ? Colors.greenAccent : Colors.redAccent,
                       fontSize: 18,
                       fontWeight: FontWeight.w500,
                     ),
@@ -78,7 +77,7 @@ class DetailScreen extends StatelessWidget {
               height: 56,
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.primaryGreen,
+                  backgroundColor: const Color(0xFF00FFA3),
                   foregroundColor: Colors.black,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(16),

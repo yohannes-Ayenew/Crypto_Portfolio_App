@@ -6,7 +6,6 @@ import '../providers/favorites_provider.dart';
 import '../widgets/price_chart.dart';
 
 class DetailScreen extends ConsumerWidget {
-  // Changed to ConsumerWidget
   final CryptoCoin coin;
 
   const DetailScreen({super.key, required this.coin});
@@ -16,7 +15,6 @@ class DetailScreen extends ConsumerWidget {
     final currencyFormatter = NumberFormat.simpleCurrency();
     final isPositive = coin.changePercentage >= 0;
 
-    // Watch the favorites list
     final favorites = ref.watch(favoritesProvider);
     final isFavorited = favorites.contains(coin.symbol);
 
@@ -28,7 +26,6 @@ class DetailScreen extends ConsumerWidget {
         foregroundColor: Colors.white,
         elevation: 0,
         actions: [
-          // --- FAVORITE BUTTON IN APPBAR ---
           IconButton(
             onPressed: () => ref
                 .read(favoritesProvider.notifier)
@@ -48,22 +45,35 @@ class DetailScreen extends ConsumerWidget {
             Center(
               child: Column(
                 children: [
-                  Container(
-                    width: 80,
-                    height: 80,
-                    decoration: const BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: Colors.white,
-                    ),
-                    child: ClipOval(
-                      child: Image.network(coin.imagePath, fit: BoxFit.cover),
+                  // --- HERO ANIMATION START ---
+                  Hero(
+                    tag: coin.symbol, // Must match the tag in CoinTile exactly
+                    child: Container(
+                      width: 100, // Slightly larger on detail screen
+                      height: 100,
+                      decoration: const BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Colors.white,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.white10,
+                            blurRadius: 20,
+                            spreadRadius: 5,
+                          ),
+                        ],
+                      ),
+                      child: ClipOval(
+                        child: Image.network(coin.imagePath, fit: BoxFit.cover),
+                      ),
                     ),
                   ),
-                  const SizedBox(height: 16),
+
+                  // --- HERO ANIMATION END ---
+                  const SizedBox(height: 24),
                   Text(
                     currencyFormatter.format(coin.price),
                     style: const TextStyle(
-                      fontSize: 32,
+                      fontSize: 36,
                       color: Colors.white,
                       fontWeight: FontWeight.bold,
                     ),
@@ -74,7 +84,7 @@ class DetailScreen extends ConsumerWidget {
                       color: isPositive
                           ? const Color(0xFF00FFA3)
                           : Colors.redAccent,
-                      fontSize: 18,
+                      fontSize: 20,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
@@ -83,7 +93,6 @@ class DetailScreen extends ConsumerWidget {
             ),
             const SizedBox(height: 40),
 
-            // Chart Section
             SizedBox(
               height: 250,
               width: double.infinity,
@@ -95,7 +104,6 @@ class DetailScreen extends ConsumerWidget {
 
             const Spacer(),
 
-            // Buy Button
             SizedBox(
               width: double.infinity,
               height: 56,

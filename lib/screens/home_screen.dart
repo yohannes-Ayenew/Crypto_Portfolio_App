@@ -6,7 +6,10 @@ import '../widgets/coin_tile.dart';
 import '../widgets/portfolio_card.dart';
 import '../widgets/shimmer_tile.dart';
 
-// State provider to track the selected tab
+// 1. Provider to track the search text
+final searchQueryProvider = StateProvider<String>((ref) => "");
+
+// 2. Provider to track the selected tab (Market vs Watchlist)
 final showFavoritesOnlyProvider = StateProvider<bool>((ref) => false);
 
 class HomeScreen extends ConsumerWidget {
@@ -17,6 +20,7 @@ class HomeScreen extends ConsumerWidget {
     final cryptoAsync = ref.watch(cryptoListProvider);
     final favorites = ref.watch(favoritesProvider);
     final showFavoritesOnly = ref.watch(showFavoritesOnlyProvider);
+    final searchQuery = ref.watch(searchQueryProvider);
 
     return Scaffold(
       backgroundColor: Colors.black,
@@ -36,19 +40,74 @@ class HomeScreen extends ConsumerWidget {
         onRefresh: () => ref.refresh(cryptoListProvider.future),
         child: cryptoAsync.when(
           data: (allCoins) {
-            final displayedCoins = showFavoritesOnly
+            // --- FILTERING LOGIC ---
+            // First, filter by Watchlist if enabled
+            var filteredCoins = showFavoritesOnly
                 ? allCoins.where((c) => favorites.contains(c.symbol)).toList()
                 : allCoins;
+
+            // Then, filter by Search Query
+            if (searchQuery.isNotEmpty) {
+              filteredCoins = filteredCoins.where((coin) {
+                return coin.name.toLowerCase().contains(
+                      searchQuery.toLowerCase(),
+                    ) ||
+                    coin.symbol.toLowerCase().contains(
+                      searchQuery.toLowerCase(),
+                    );
+              }).toList();
+            }
 
             return CustomScrollView(
               slivers: [
                 const SliverToBoxAdapter(child: PortfolioCard()),
 
-                // --- NEW NAVIGATION SECTION ---
+                // --- SEARCH BAR SECTION ---
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: TextField(
+                      onChanged: (value) =>
+                          ref.read(searchQueryProvider.notifier).state = value,
+                      style: const TextStyle(color: Colors.white),
+                      decoration: InputDecoration(
+                        hintText: "Search coins...",
+                        hintStyle: const TextStyle(color: Colors.grey),
+                        prefixIcon: const Icon(
+                          Icons.search,
+                          color: Colors.grey,
+                        ),
+                        filled: true,
+                        fillColor: Colors.grey[900],
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide.none,
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(vertical: 0),
+                        // Show clear button only if typing
+                        suffixIcon: searchQuery.isNotEmpty
+                            ? IconButton(
+                                icon: const Icon(
+                                  Icons.clear,
+                                  color: Colors.grey,
+                                ),
+                                onPressed: () =>
+                                    ref
+                                            .read(searchQueryProvider.notifier)
+                                            .state =
+                                        "",
+                              )
+                            : null,
+                      ),
+                    ),
+                  ),
+                ),
+
+                // --- NAVIGATION TABS ---
                 SliverPadding(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 16,
-                    vertical: 16,
+                    vertical: 8,
                   ),
                   sliver: SliverToBoxAdapter(
                     child: Row(
@@ -79,24 +138,42 @@ class HomeScreen extends ConsumerWidget {
                   ),
                 ),
 
-                // Empty state for Favorites
-                if (showFavoritesOnly && displayedCoins.isEmpty)
-                  const SliverFillRemaining(
+                // --- EMPTY STATES ---
+                if (filteredCoins.isEmpty)
+                  SliverFillRemaining(
                     hasScrollBody: false,
                     child: Center(
-                      child: Text(
-                        "Your watchlist is empty",
-                        style: TextStyle(color: Colors.grey, fontSize: 16),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.search_off,
+                            color: Colors.grey[800],
+                            size: 64,
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            searchQuery.isEmpty
+                                ? "Your watchlist is empty"
+                                : "No results for '$searchQuery'",
+                            style: const TextStyle(
+                              color: Colors.grey,
+                              fontSize: 16,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   )
                 else
+                  // --- COIN LIST ---
                   SliverList(
                     delegate: SliverChildBuilderDelegate(
-                      (context, index) => CoinTile(coin: displayedCoins[index]),
-                      childCount: displayedCoins.length,
+                      (context, index) => CoinTile(coin: filteredCoins[index]),
+                      childCount: filteredCoins.length,
                     ),
                   ),
+
                 const SliverToBoxAdapter(child: SizedBox(height: 100)),
               ],
             );
@@ -104,9 +181,7 @@ class HomeScreen extends ConsumerWidget {
           loading: () => CustomScrollView(
             slivers: [
               const SliverToBoxAdapter(child: PortfolioCard()),
-              const SliverToBoxAdapter(
-                child: SizedBox(height: 60),
-              ), // Space for shimmer nav
+              const SliverToBoxAdapter(child: SizedBox(height: 80)),
               SliverList(
                 delegate: SliverChildBuilderDelegate(
                   (context, index) => const ShimmerTile(),
@@ -126,7 +201,6 @@ class HomeScreen extends ConsumerWidget {
     );
   }
 
-  // Helper widget for the custom Navigation Tabs
   Widget _navButton({
     required WidgetRef ref,
     required String label,
@@ -147,7 +221,6 @@ class HomeScreen extends ConsumerWidget {
             ),
           ),
           const SizedBox(height: 4),
-          // Animated underline indicator
           AnimatedContainer(
             duration: const Duration(milliseconds: 250),
             height: 3,

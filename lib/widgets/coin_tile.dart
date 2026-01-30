@@ -21,22 +21,29 @@ class CoinTile extends StatelessWidget {
         );
       },
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      leading: Container(
-        width: 48,
-        height: 48,
-        decoration: const BoxDecoration(
-          shape: BoxShape.circle,
-          color: Colors.white,
-        ),
-        child: ClipOval(
-          child: Image.network(
-            coin.imagePath,
-            fit: BoxFit.cover,
-            errorBuilder: (context, error, stackTrace) =>
-                const Icon(Icons.monetization_on, color: Colors.orange),
+
+      // --- HERO ANIMATION START ---
+      leading: Hero(
+        tag: coin.symbol, // The tag must be unique for each coin
+        child: Container(
+          width: 48,
+          height: 48,
+          decoration: const BoxDecoration(
+            shape: BoxShape.circle,
+            color: Colors.white,
+          ),
+          child: ClipOval(
+            child: Image.network(
+              coin.imagePath,
+              fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) =>
+                  const Icon(Icons.monetization_on, color: Colors.orange),
+            ),
           ),
         ),
       ),
+
+      // --- HERO ANIMATION END ---
       title: Text(
         coin.name,
         style: const TextStyle(

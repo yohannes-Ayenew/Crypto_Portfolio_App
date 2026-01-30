@@ -21,60 +21,40 @@ class CoinTile extends StatelessWidget {
         );
       },
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-
-      // --- HERO ANIMATION START ---
       leading: Hero(
-        tag: coin.symbol, // The tag must be unique for each coin
+        tag: coin.symbol,
         child: Container(
           width: 48,
           height: 48,
-          decoration: const BoxDecoration(
+          decoration: BoxDecoration(
             shape: BoxShape.circle,
             color: Colors.white,
+            border: Border.all(color: Colors.grey.shade200),
           ),
           child: ClipOval(
-            child: Image.network(
-              coin.imagePath,
-              fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) =>
-                  const Icon(Icons.monetization_on, color: Colors.orange),
-            ),
+            child: Image.network(coin.imagePath, fit: BoxFit.cover),
           ),
         ),
       ),
-
-      // --- HERO ANIMATION END ---
+      // Automatically uses correct theme color for title and trailing text
       title: Text(
         coin.name,
-        style: const TextStyle(
-          fontWeight: FontWeight.bold,
-          color: Colors.white,
-          fontSize: 17,
-        ),
+        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 17),
       ),
-      subtitle: Text(
-        coin.symbol,
-        style: const TextStyle(color: Colors.grey, fontWeight: FontWeight.w500),
-      ),
+      subtitle: Text(coin.symbol, style: const TextStyle(color: Colors.grey)),
       trailing: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           Text(
             currencyFormatter.format(coin.price),
-            style: const TextStyle(
-              fontWeight: FontWeight.bold,
-              fontSize: 16,
-              color: Colors.white,
-            ),
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
           ),
-          const SizedBox(height: 4),
           Text(
             "${isPositive ? '+' : ''}${coin.changePercentage.toStringAsFixed(2)}%",
             style: TextStyle(
-              color: isPositive ? const Color(0xFF00FFA3) : Colors.redAccent,
+              color: isPositive ? Colors.green : Colors.red,
               fontSize: 13,
-              fontWeight: FontWeight.w500,
             ),
           ),
         ],

@@ -6,59 +6,16 @@ class ShimmerTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final bool isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Shimmer.fromColors(
-      baseColor: Colors.grey[900]!,
-      highlightColor: Colors.grey[800]!,
+      baseColor: isDark ? Colors.grey[900]! : Colors.grey[300]!,
+      highlightColor: isDark ? Colors.grey[800]! : Colors.grey[100]!,
       child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        leading: Container(
-          width: 48,
-          height: 48,
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            shape: BoxShape.circle,
-          ),
-        ),
-        title: Container(
-          height: 16,
-          width: 100,
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(4),
-          ),
-        ),
-        subtitle: Container(
-          height: 12,
-          width: 60,
-          margin: const EdgeInsets.only(top: 8),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(4),
-          ),
-        ),
-        trailing: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: [
-            Container(
-              height: 16,
-              width: 80,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(4),
-              ),
-            ),
-            const SizedBox(height: 8),
-            Container(
-              height: 12,
-              width: 40,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(4),
-              ),
-            ),
-          ],
-        ),
+        leading: const CircleAvatar(backgroundColor: Colors.white),
+        title: Container(height: 16, width: 100, color: Colors.white),
+        subtitle: Container(height: 12, width: 60, color: Colors.white),
+        trailing: Container(height: 16, width: 80, color: Colors.white),
       ),
     );
   }

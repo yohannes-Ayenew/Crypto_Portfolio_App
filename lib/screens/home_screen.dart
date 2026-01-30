@@ -4,12 +4,10 @@ import '../providers/crypto_provider.dart';
 import '../providers/favorites_provider.dart';
 import '../widgets/coin_tile.dart';
 import '../widgets/portfolio_card.dart';
-import '../widgets/shimmer_tile.dart';
+import '../core/theme.dart';
+import 'settings_screen.dart';
 
-// 1. Provider to track the search text
 final searchQueryProvider = StateProvider<String>((ref) => "");
-
-// 2. Provider to track the selected tab (Market vs Watchlist)
 final showFavoritesOnlyProvider = StateProvider<bool>((ref) => false);
 
 class HomeScreen extends ConsumerWidget {
@@ -21,32 +19,33 @@ class HomeScreen extends ConsumerWidget {
     final favorites = ref.watch(favoritesProvider);
     final showFavoritesOnly = ref.watch(showFavoritesOnlyProvider);
     final searchQuery = ref.watch(searchQueryProvider);
+    final bool isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: Colors.black,
       appBar: AppBar(
-        title: const Text("Crypto Portfolio"),
-        backgroundColor: Colors.black,
-        elevation: 0,
+        title: const Text(
+          "Crypto Portfolio",
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
         actions: [
           IconButton(
-            onPressed: () {},
-            icon: const Icon(Icons.notifications_outlined),
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const SettingsScreen()),
+            ),
+            icon: const Icon(Icons.settings_outlined),
           ),
         ],
       ),
       body: RefreshIndicator(
-        color: const Color(0xFF00FFA3),
+        color: AppTheme.primaryGreen,
         onRefresh: () => ref.refresh(cryptoListProvider.future),
         child: cryptoAsync.when(
           data: (allCoins) {
-            // --- FILTERING LOGIC ---
-            // First, filter by Watchlist if enabled
             var filteredCoins = showFavoritesOnly
                 ? allCoins.where((c) => favorites.contains(c.symbol)).toList()
                 : allCoins;
 
-            // Then, filter by Search Query
             if (searchQuery.isNotEmpty) {
               filteredCoins = filteredCoins.where((coin) {
                 return coin.name.toLowerCase().contains(
@@ -62,48 +61,31 @@ class HomeScreen extends ConsumerWidget {
               slivers: [
                 const SliverToBoxAdapter(child: PortfolioCard()),
 
-                // --- SEARCH BAR SECTION ---
+                // Search Bar Section
                 SliverToBoxAdapter(
                   child: Padding(
-                    padding: const EdgeInsets.all(16.0),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16.0,
+                      vertical: 12,
+                    ),
                     child: TextField(
                       onChanged: (value) =>
                           ref.read(searchQueryProvider.notifier).state = value,
-                      style: const TextStyle(color: Colors.white),
                       decoration: InputDecoration(
                         hintText: "Search coins...",
-                        hintStyle: const TextStyle(color: Colors.grey),
-                        prefixIcon: const Icon(
-                          Icons.search,
-                          color: Colors.grey,
-                        ),
+                        prefixIcon: const Icon(Icons.search),
                         filled: true,
-                        fillColor: Colors.grey[900],
+                        fillColor: isDark ? Colors.grey[900] : Colors.grey[100],
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
                           borderSide: BorderSide.none,
                         ),
-                        contentPadding: const EdgeInsets.symmetric(vertical: 0),
-                        // Show clear button only if typing
-                        suffixIcon: searchQuery.isNotEmpty
-                            ? IconButton(
-                                icon: const Icon(
-                                  Icons.clear,
-                                  color: Colors.grey,
-                                ),
-                                onPressed: () =>
-                                    ref
-                                            .read(searchQueryProvider.notifier)
-                                            .state =
-                                        "",
-                              )
-                            : null,
                       ),
                     ),
                   ),
                 ),
 
-                // --- NAVIGATION TABS ---
+                // Navigation Tabs
                 SliverPadding(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 16,
@@ -113,102 +95,41 @@ class HomeScreen extends ConsumerWidget {
                     child: Row(
                       children: [
                         _navButton(
-                          ref: ref,
-                          label: "Market Trends",
-                          isActive: !showFavoritesOnly,
-                          onTap: () =>
-                              ref
-                                      .read(showFavoritesOnlyProvider.notifier)
-                                      .state =
-                                  false,
+                          ref,
+                          "Market Trends",
+                          !showFavoritesOnly,
+                          isDark,
                         ),
                         const SizedBox(width: 24),
-                        _navButton(
-                          ref: ref,
-                          label: "Watchlist",
-                          isActive: showFavoritesOnly,
-                          onTap: () =>
-                              ref
-                                      .read(showFavoritesOnlyProvider.notifier)
-                                      .state =
-                                  true,
-                        ),
+                        _navButton(ref, "Watchlist", showFavoritesOnly, isDark),
                       ],
                     ),
                   ),
                 ),
 
-                // --- EMPTY STATES ---
-                if (filteredCoins.isEmpty)
-                  SliverFillRemaining(
-                    hasScrollBody: false,
-                    child: Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.search_off,
-                            color: Colors.grey[800],
-                            size: 64,
-                          ),
-                          const SizedBox(height: 16),
-                          Text(
-                            searchQuery.isEmpty
-                                ? "Your watchlist is empty"
-                                : "No results for '$searchQuery'",
-                            style: const TextStyle(
-                              color: Colors.grey,
-                              fontSize: 16,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  )
-                else
-                  // --- COIN LIST ---
-                  SliverList(
-                    delegate: SliverChildBuilderDelegate(
-                      (context, index) => CoinTile(coin: filteredCoins[index]),
-                      childCount: filteredCoins.length,
-                    ),
+                SliverList(
+                  delegate: SliverChildBuilderDelegate(
+                    (context, index) => CoinTile(coin: filteredCoins[index]),
+                    childCount: filteredCoins.length,
                   ),
-
+                ),
                 const SliverToBoxAdapter(child: SizedBox(height: 100)),
               ],
             );
           },
-          loading: () => CustomScrollView(
-            slivers: [
-              const SliverToBoxAdapter(child: PortfolioCard()),
-              const SliverToBoxAdapter(child: SizedBox(height: 80)),
-              SliverList(
-                delegate: SliverChildBuilderDelegate(
-                  (context, index) => const ShimmerTile(),
-                  childCount: 6,
-                ),
-              ),
-            ],
+          loading: () => const SliverFillRemaining(
+            child: Center(child: CircularProgressIndicator()),
           ),
-          error: (err, stack) => Center(
-            child: Text(
-              "Error: $err",
-              style: const TextStyle(color: Colors.white),
-            ),
-          ),
+          error: (err, stack) => Center(child: Text("Error: $err")),
         ),
       ),
     );
   }
 
-  Widget _navButton({
-    required WidgetRef ref,
-    required String label,
-    required bool isActive,
-    required VoidCallback onTap,
-  }) {
+  Widget _navButton(WidgetRef ref, String label, bool isActive, bool isDark) {
     return GestureDetector(
-      onTap: onTap,
+      onTap: () => ref.read(showFavoritesOnlyProvider.notifier).state =
+          (label == "Watchlist"),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -217,16 +138,18 @@ class HomeScreen extends ConsumerWidget {
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
-              color: isActive ? Colors.white : Colors.grey,
+              color: isActive
+                  ? (isDark ? Colors.white : Colors.black)
+                  : Colors.grey,
             ),
           ),
           const SizedBox(height: 4),
           AnimatedContainer(
             duration: const Duration(milliseconds: 250),
             height: 3,
-            width: isActive ? 30 : 0,
+            width: isActive ? 24 : 0, // Neon underline fixed width
             decoration: BoxDecoration(
-              color: const Color(0xFF00FFA3),
+              color: AppTheme.primaryGreen,
               borderRadius: BorderRadius.circular(2),
             ),
           ),

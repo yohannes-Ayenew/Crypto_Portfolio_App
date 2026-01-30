@@ -6,49 +6,54 @@ class PortfolioCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Detect if we are in Dark Mode
+    final bool isDark = Theme.of(context).brightness == Brightness.dark;
+
+    // Dynamic text color: White in Dark Mode, Black in Light Mode
+    final Color textColor = isDark ? Colors.white : Colors.black;
+
     return Container(
       margin: const EdgeInsets.all(16),
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [Colors.grey.shade900, Colors.black],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
+        // FIXED: Now uses the theme's card color
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(
-            color: AppTheme.primaryGreen.withOpacity(0.1),
-            blurRadius: 20,
-            offset: const Offset(0, 10),
-          ),
-        ],
-        border: Border.all(color: Colors.white10),
+        // Added a slight shadow for light mode to make the white card "pop"
+        boxShadow: isDark
+            ? []
+            : [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
             "Total Balance",
-            style: TextStyle(color: AppTheme.secondaryText),
+            style: TextStyle(color: Colors.grey, fontSize: 14),
           ),
           const SizedBox(height: 8),
-          const Text(
+          Text(
             "\$45,230.50",
             style: TextStyle(
+              color: textColor, // Dynamic color
               fontSize: 32,
               fontWeight: FontWeight.bold,
-              color: Colors.white,
             ),
           ),
           const SizedBox(height: 24),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              _buildActionButton(Icons.arrow_upward, "Send"),
-              _buildActionButton(Icons.arrow_downward, "Receive"),
-              _buildActionButton(Icons.swap_horiz, "Swap"),
-              _buildActionButton(Icons.credit_card, "Buy"),
+              _actionIcon(Icons.arrow_upward, "Send", isDark),
+              _actionIcon(Icons.arrow_downward, "Receive", isDark),
+              _actionIcon(Icons.swap_horiz, "Swap", isDark),
+              _actionIcon(Icons.credit_card, "Buy", isDark),
             ],
           ),
         ],
@@ -56,19 +61,18 @@ class PortfolioCard extends StatelessWidget {
     );
   }
 
-  Widget _buildActionButton(IconData icon, String label) {
+  Widget _actionIcon(IconData icon, String label, bool isDark) {
     return Column(
       children: [
         CircleAvatar(
-          radius: 24,
-          backgroundColor: AppTheme.cardColor,
-          child: Icon(icon, color: AppTheme.primaryGreen),
+          // Background of icons slightly darker in light mode
+          backgroundColor: isDark
+              ? Colors.white.withOpacity(0.05)
+              : Colors.grey[200],
+          child: Icon(icon, color: AppTheme.primaryGreen, size: 20),
         ),
         const SizedBox(height: 8),
-        Text(
-          label,
-          style: const TextStyle(fontSize: 12, color: Colors.white70),
-        ),
+        Text(label, style: const TextStyle(color: Colors.grey, fontSize: 12)),
       ],
     );
   }

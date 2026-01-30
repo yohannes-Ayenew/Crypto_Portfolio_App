@@ -30,14 +30,10 @@ class CoinTile extends StatelessWidget {
         ),
         child: ClipOval(
           child: Image.network(
-            coin.imagePath, // CHANGED TO .NETWORK
+            coin.imagePath,
             fit: BoxFit.cover,
-            errorBuilder: (context, error, stackTrace) => Center(
-              child: Text(
-                coin.symbol[0],
-                style: const TextStyle(color: Colors.black),
-              ),
-            ),
+            errorBuilder: (context, error, stackTrace) =>
+                const Icon(Icons.monetization_on, color: Colors.orange),
           ),
         ),
       ),
@@ -46,9 +42,13 @@ class CoinTile extends StatelessWidget {
         style: const TextStyle(
           fontWeight: FontWeight.bold,
           color: Colors.white,
+          fontSize: 17,
         ),
       ),
-      subtitle: Text(coin.symbol, style: const TextStyle(color: Colors.grey)),
+      subtitle: Text(
+        coin.symbol,
+        style: const TextStyle(color: Colors.grey, fontWeight: FontWeight.w500),
+      ),
       trailing: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         crossAxisAlignment: CrossAxisAlignment.end,
@@ -61,11 +61,13 @@ class CoinTile extends StatelessWidget {
               color: Colors.white,
             ),
           ),
+          const SizedBox(height: 4),
           Text(
             "${isPositive ? '+' : ''}${coin.changePercentage.toStringAsFixed(2)}%",
             style: TextStyle(
-              color: isPositive ? Colors.greenAccent : Colors.redAccent,
-              fontSize: 12,
+              color: isPositive ? const Color(0xFF00FFA3) : Colors.redAccent,
+              fontSize: 13,
+              fontWeight: FontWeight.w500,
             ),
           ),
         ],

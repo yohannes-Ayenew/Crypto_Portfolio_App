@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/crypto_provider.dart';
+import '../providers/favorites_provider.dart';
 import '../widgets/coin_tile.dart';
 import '../widgets/portfolio_card.dart';
-import '../widgets/shimmer_tile.dart'; // Import the new shimmer widget
+import '../widgets/shimmer_tile.dart';
+
+// State provider to track the selected tab
+final showFavoritesOnlyProvider = StateProvider<bool>((ref) => false);
 
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
@@ -11,6 +15,8 @@ class HomeScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final cryptoAsync = ref.watch(cryptoListProvider);
+    final favorites = ref.watch(favoritesProvider);
+    final showFavoritesOnly = ref.watch(showFavoritesOnlyProvider);
 
     return Scaffold(
       backgroundColor: Colors.black,
@@ -25,44 +31,82 @@ class HomeScreen extends ConsumerWidget {
           ),
         ],
       ),
-      // RefreshIndicator adds the "Pull to Refresh" functionality
       body: RefreshIndicator(
         color: const Color(0xFF00FFA3),
-        backgroundColor: Colors.grey[900],
         onRefresh: () => ref.refresh(cryptoListProvider.future),
         child: cryptoAsync.when(
-          data: (cryptoList) => CustomScrollView(
-            slivers: [
-              const SliverToBoxAdapter(child: PortfolioCard()),
-              const SliverPadding(
-                padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                sliver: SliverToBoxAdapter(
-                  child: Text(
-                    "Market Trends",
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
+          data: (allCoins) {
+            final displayedCoins = showFavoritesOnly
+                ? allCoins.where((c) => favorites.contains(c.symbol)).toList()
+                : allCoins;
+
+            return CustomScrollView(
+              slivers: [
+                const SliverToBoxAdapter(child: PortfolioCard()),
+
+                // --- NEW NAVIGATION SECTION ---
+                SliverPadding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 16,
+                  ),
+                  sliver: SliverToBoxAdapter(
+                    child: Row(
+                      children: [
+                        _navButton(
+                          ref: ref,
+                          label: "Market Trends",
+                          isActive: !showFavoritesOnly,
+                          onTap: () =>
+                              ref
+                                      .read(showFavoritesOnlyProvider.notifier)
+                                      .state =
+                                  false,
+                        ),
+                        const SizedBox(width: 24),
+                        _navButton(
+                          ref: ref,
+                          label: "Watchlist",
+                          isActive: showFavoritesOnly,
+                          onTap: () =>
+                              ref
+                                      .read(showFavoritesOnlyProvider.notifier)
+                                      .state =
+                                  true,
+                        ),
+                      ],
                     ),
                   ),
                 ),
-              ),
-              SliverList(
-                delegate: SliverChildBuilderDelegate(
-                  (context, index) => CoinTile(coin: cryptoList[index]),
-                  childCount: cryptoList.length,
-                ),
-              ),
-            ],
-          ),
-          // LOADING STATE: Now uses 6 ShimmerTiles instead of one spinner
+
+                // Empty state for Favorites
+                if (showFavoritesOnly && displayedCoins.isEmpty)
+                  const SliverFillRemaining(
+                    hasScrollBody: false,
+                    child: Center(
+                      child: Text(
+                        "Your watchlist is empty",
+                        style: TextStyle(color: Colors.grey, fontSize: 16),
+                      ),
+                    ),
+                  )
+                else
+                  SliverList(
+                    delegate: SliverChildBuilderDelegate(
+                      (context, index) => CoinTile(coin: displayedCoins[index]),
+                      childCount: displayedCoins.length,
+                    ),
+                  ),
+                const SliverToBoxAdapter(child: SizedBox(height: 100)),
+              ],
+            );
+          },
           loading: () => CustomScrollView(
             slivers: [
               const SliverToBoxAdapter(child: PortfolioCard()),
-              const SliverPadding(
-                padding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                sliver: SliverToBoxAdapter(child: SizedBox(height: 20)),
-              ),
+              const SliverToBoxAdapter(
+                child: SizedBox(height: 60),
+              ), // Space for shimmer nav
               SliverList(
                 delegate: SliverChildBuilderDelegate(
                   (context, index) => const ShimmerTile(),
@@ -72,23 +116,48 @@ class HomeScreen extends ConsumerWidget {
             ],
           ),
           error: (err, stack) => Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Icon(Icons.error_outline, color: Colors.red, size: 40),
-                const SizedBox(height: 16),
-                Text(
-                  "Error: $err",
-                  style: const TextStyle(color: Colors.white),
-                ),
-                ElevatedButton(
-                  onPressed: () => ref.refresh(cryptoListProvider),
-                  child: const Text("Try Again"),
-                ),
-              ],
+            child: Text(
+              "Error: $err",
+              style: const TextStyle(color: Colors.white),
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  // Helper widget for the custom Navigation Tabs
+  Widget _navButton({
+    required WidgetRef ref,
+    required String label,
+    required bool isActive,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: isActive ? Colors.white : Colors.grey,
+            ),
+          ),
+          const SizedBox(height: 4),
+          // Animated underline indicator
+          AnimatedContainer(
+            duration: const Duration(milliseconds: 250),
+            height: 3,
+            width: isActive ? 30 : 0,
+            decoration: BoxDecoration(
+              color: const Color(0xFF00FFA3),
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+        ],
       ),
     );
   }

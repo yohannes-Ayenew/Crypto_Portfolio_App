@@ -1,17 +1,24 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../models/crypto_coin.dart';
+import '../providers/favorites_provider.dart';
 import '../widgets/price_chart.dart';
 
-class DetailScreen extends StatelessWidget {
+class DetailScreen extends ConsumerWidget {
+  // Changed to ConsumerWidget
   final CryptoCoin coin;
 
   const DetailScreen({super.key, required this.coin});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final currencyFormatter = NumberFormat.simpleCurrency();
     final isPositive = coin.changePercentage >= 0;
+
+    // Watch the favorites list
+    final favorites = ref.watch(favoritesProvider);
+    final isFavorited = favorites.contains(coin.symbol);
 
     return Scaffold(
       backgroundColor: Colors.black,
@@ -20,6 +27,19 @@ class DetailScreen extends StatelessWidget {
         backgroundColor: Colors.black,
         foregroundColor: Colors.white,
         elevation: 0,
+        actions: [
+          // --- FAVORITE BUTTON IN APPBAR ---
+          IconButton(
+            onPressed: () => ref
+                .read(favoritesProvider.notifier)
+                .toggleFavorite(coin.symbol),
+            icon: Icon(
+              isFavorited ? Icons.favorite : Icons.favorite_border,
+              color: isFavorited ? Colors.red : Colors.white,
+            ),
+          ),
+          const SizedBox(width: 8),
+        ],
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -36,10 +56,7 @@ class DetailScreen extends StatelessWidget {
                       color: Colors.white,
                     ),
                     child: ClipOval(
-                      child: Image.network(
-                        coin.imagePath, // CHANGED TO .NETWORK
-                        fit: BoxFit.cover,
-                      ),
+                      child: Image.network(coin.imagePath, fit: BoxFit.cover),
                     ),
                   ),
                   const SizedBox(height: 16),
@@ -54,7 +71,9 @@ class DetailScreen extends StatelessWidget {
                   Text(
                     "${isPositive ? '+' : ''}${coin.changePercentage.toStringAsFixed(2)}%",
                     style: TextStyle(
-                      color: isPositive ? Colors.greenAccent : Colors.redAccent,
+                      color: isPositive
+                          ? const Color(0xFF00FFA3)
+                          : Colors.redAccent,
                       fontSize: 18,
                       fontWeight: FontWeight.w500,
                     ),
@@ -63,6 +82,8 @@ class DetailScreen extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 40),
+
+            // Chart Section
             SizedBox(
               height: 250,
               width: double.infinity,
@@ -71,7 +92,10 @@ class DetailScreen extends StatelessWidget {
                 isPositive: isPositive,
               ),
             ),
+
             const Spacer(),
+
+            // Buy Button
             SizedBox(
               width: double.infinity,
               height: 56,

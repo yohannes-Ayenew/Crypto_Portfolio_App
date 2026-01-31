@@ -3,9 +3,11 @@ import 'package:http/http.dart' as http;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:candlesticks/candlesticks.dart';
 import '../models/crypto_coin.dart';
+import '../models/news_article.dart';
+
 
 // 1. PROVIDER FOR MARKET LIST (CoinGecko)
-final cryptoListProvider = FutureProvider<List<CryptoCoin>>((ref) async {
+  final cryptoListProvider = FutureProvider<List<CryptoCoin>>((ref) async {
   const url =
       'https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=20&page=1&sparkline=true';
 
@@ -60,5 +62,25 @@ final candleFetchProvider = FutureProvider.family<List<Candle>, String>((
         .toList();
   } else {
     throw Exception("Candles not found on Binance for $binanceSymbol");
+  }
+});
+
+// 3. Create the News Provider
+final newsProvider = FutureProvider<List<NewsArticle>>((ref) async {
+  // Using a reliable public crypto news endpoint
+  final url = 'https://min-api.cryptocompare.com/data/v2/news/?lang=EN';
+  
+  final response = await http.get(Uri.parse(url));
+  
+  if (response.statusCode == 200) {
+    final List<dynamic> data = json.decode(response.body)['Data'];
+    return data.map((json) => NewsArticle(
+      title: json['title'],
+      source: json['source_info']['name'],
+      url: json['url'],
+      publishedAt: DateTime.fromMillisecondsSinceEpoch(json['published_on'] * 1000).toString().split(' ')[0],
+    )).toList();
+  } else {
+    throw Exception('Failed to load news');
   }
 });

@@ -1,12 +1,11 @@
+import 'package:crypto_app/widgets/stylish_app_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../providers/crypto_provider.dart'; // <--- THIS IMPORT IS CRUCIAL
+import '../providers/crypto_provider.dart';
 import '../providers/favorites_provider.dart';
 import '../widgets/coin_tile.dart';
 import '../widgets/portfolio_card.dart';
-import '../widgets/shimmer_tile.dart';
 import '../core/theme.dart';
-import 'settings_screen.dart';
 
 final searchQueryProvider = StateProvider<String>((ref) => "");
 final showFavoritesOnlyProvider = StateProvider<bool>((ref) => false);
@@ -16,7 +15,6 @@ class HomeScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // Correctly watching 'cryptoListProvider' from crypto_provider.dart
     final cryptoAsync = ref.watch(cryptoListProvider);
     final favorites = ref.watch(favoritesProvider);
     final showFavoritesOnly = ref.watch(showFavoritesOnlyProvider);
@@ -24,21 +22,7 @@ class HomeScreen extends ConsumerWidget {
     final bool isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text(
-          "Crypto Portfolio",
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
-        actions: [
-          IconButton(
-            onPressed: () => Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => const SettingsScreen()),
-            ),
-            icon: const Icon(Icons.settings_outlined),
-          ),
-        ],
-      ),
+      appBar: const StylishAppBar(firstWord: "CRYPTO", secondWord: "PORTFOLIO"),
       body: RefreshIndicator(
         color: AppTheme.neonGreen,
         onRefresh: () => ref.refresh(cryptoListProvider.future),
@@ -63,7 +47,7 @@ class HomeScreen extends ConsumerWidget {
               slivers: [
                 const SliverToBoxAdapter(child: PortfolioCard()),
 
-                // Search Bar
+                // Adaptive Search Bar
                 SliverToBoxAdapter(
                   child: Padding(
                     padding: const EdgeInsets.symmetric(
@@ -111,7 +95,7 @@ class HomeScreen extends ConsumerWidget {
 
                 if (filteredCoins.isEmpty)
                   const SliverFillRemaining(
-                    child: Center(child: Text("No coins found")),
+                    child: Center(child: Text("No results found")),
                   )
                 else
                   SliverList(
@@ -124,26 +108,10 @@ class HomeScreen extends ConsumerWidget {
               ],
             );
           },
-          loading: () => SliverList(
-            delegate: SliverChildBuilderDelegate(
-              (context, index) => const ShimmerTile(),
-              childCount: 8,
-            ),
+          loading: () => const SliverFillRemaining(
+            child: Center(child: CircularProgressIndicator()),
           ),
-          error: (err, stack) => Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Icon(Icons.wifi_off, size: 50, color: Colors.grey),
-                const SizedBox(height: 10),
-                Text("Error: $err"),
-                TextButton(
-                  onPressed: () => ref.refresh(cryptoListProvider),
-                  child: const Text("Try Again"),
-                ),
-              ],
-            ),
-          ),
+          error: (err, stack) => Center(child: Text("Error: $err")),
         ),
       ),
     );

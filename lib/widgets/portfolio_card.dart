@@ -1,5 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart'; // Added for HapticFeedback
 import '../core/theme.dart';
+import '../screens/send_screen.dart';
+import '../screens/receive_screen.dart';
+import '../screens/buy_screen.dart';
+import '../screens/swap_screen.dart';
 
 class PortfolioCard extends StatelessWidget {
   const PortfolioCard({super.key});
@@ -7,6 +12,8 @@ class PortfolioCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final bool isDark = Theme.of(context).brightness == Brightness.dark;
+    final Color textColor = isDark ? Colors.white : Colors.black;
+    final Color subTextColor = isDark ? Colors.grey : Colors.grey[700]!;
 
     return Container(
       margin: const EdgeInsets.all(16),
@@ -30,7 +37,7 @@ class PortfolioCard extends StatelessWidget {
           Text(
             "Total Balance",
             style: TextStyle(
-              color: isDark ? Colors.grey : Colors.grey[700],
+              color: subTextColor,
               fontSize: 14,
               fontWeight: FontWeight.w500,
             ),
@@ -39,7 +46,7 @@ class PortfolioCard extends StatelessWidget {
           Text(
             "\$45,230.50",
             style: TextStyle(
-              color: isDark ? Colors.white : Colors.black,
+              color: textColor,
               fontSize: 34,
               fontWeight: FontWeight.bold,
             ),
@@ -48,10 +55,25 @@ class PortfolioCard extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              _actionIcon(context, Icons.arrow_upward, "Send"),
-              _actionIcon(context, Icons.arrow_downward, "Receive"),
-              _actionIcon(context, Icons.swap_horiz, "Swap"),
-              _actionIcon(context, Icons.credit_card, "Buy"),
+              _actionIcon(
+                context,
+                Icons.arrow_upward,
+                "Send",
+                const SendScreen(),
+              ),
+              _actionIcon(
+                context,
+                Icons.arrow_downward,
+                "Receive",
+                const ReceiveScreen(),
+              ),
+              _actionIcon(
+                context,
+                Icons.swap_horiz,
+                "Swap",
+                const SwapScreen(),
+              ),
+              _actionIcon(context, Icons.credit_card, "Buy", const BuyScreen()),
             ],
           ),
         ],
@@ -59,37 +81,55 @@ class PortfolioCard extends StatelessWidget {
     );
   }
 
-  Widget _actionIcon(BuildContext context, IconData icon, String label) {
+  Widget _actionIcon(
+    BuildContext context,
+    IconData icon,
+    String label,
+    Widget destinationScreen,
+  ) {
     final bool isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return Column(
-      children: [
-        Container(
-          width: 50,
-          height: 50,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            // Light Green tint for light mode, Dark tint for dark mode
-            color: isDark
-                ? Colors.white.withOpacity(0.07)
-                : AppTheme.primaryGreen.withOpacity(0.12),
+    return GestureDetector(
+      onTap: () {
+        // Provide tactile feedback
+        HapticFeedback.lightImpact();
+
+        // Professional Navigation
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => destinationScreen),
+        );
+      },
+      child: Column(
+        children: [
+          AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            width: 54,
+            height: 54,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              // Background adapts to theme: tinted green for light, dark glass for dark
+              color: isDark
+                  ? Colors.white.withOpacity(0.08)
+                  : AppTheme.primaryGreen.withOpacity(0.12),
+            ),
+            child: Icon(
+              icon,
+              color: isDark ? AppTheme.neonGreen : AppTheme.primaryGreen,
+              size: 24,
+            ),
           ),
-          child: Icon(
-            icon,
-            color: isDark ? AppTheme.neonGreen : AppTheme.primaryGreen,
-            size: 22,
+          const SizedBox(height: 10),
+          Text(
+            label,
+            style: TextStyle(
+              color: isDark ? Colors.grey : Colors.grey[800],
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+            ),
           ),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          label,
-          style: TextStyle(
-            color: isDark ? Colors.grey : Colors.grey[800],
-            fontSize: 12,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }

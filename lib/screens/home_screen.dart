@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../providers/crypto_provider.dart';
+import '../providers/crypto_provider.dart'; // <--- THIS IMPORT IS CRUCIAL
 import '../providers/favorites_provider.dart';
 import '../widgets/coin_tile.dart';
 import '../widgets/portfolio_card.dart';
+import '../widgets/shimmer_tile.dart';
 import '../core/theme.dart';
 import 'settings_screen.dart';
 
@@ -15,15 +16,19 @@ class HomeScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // Correctly watching 'cryptoListProvider' from crypto_provider.dart
     final cryptoAsync = ref.watch(cryptoListProvider);
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final favorites = ref.watch(favoritesProvider);
     final showFavoritesOnly = ref.watch(showFavoritesOnlyProvider);
     final searchQuery = ref.watch(searchQueryProvider);
-    final favorites = ref.watch(favoritesProvider);
+    final bool isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Crypto Portfolio"),
+        title: const Text(
+          "Crypto Portfolio",
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
         actions: [
           IconButton(
             onPressed: () => Navigator.push(
@@ -44,48 +49,49 @@ class HomeScreen extends ConsumerWidget {
                 : allCoins;
 
             if (searchQuery.isNotEmpty) {
-              filteredCoins = filteredCoins
-                  .where(
-                    (coin) =>
-                        coin.name.toLowerCase().contains(
-                          searchQuery.toLowerCase(),
-                        ) ||
-                        coin.symbol.toLowerCase().contains(
-                          searchQuery.toLowerCase(),
-                        ),
-                  )
-                  .toList();
+              filteredCoins = filteredCoins.where((coin) {
+                return coin.name.toLowerCase().contains(
+                      searchQuery.toLowerCase(),
+                    ) ||
+                    coin.symbol.toLowerCase().contains(
+                      searchQuery.toLowerCase(),
+                    );
+              }).toList();
             }
 
             return CustomScrollView(
               slivers: [
                 const SliverToBoxAdapter(child: PortfolioCard()),
+
+                // Search Bar
                 SliverToBoxAdapter(
                   child: Padding(
                     padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 8,
+                      horizontal: 16.0,
+                      vertical: 12,
                     ),
                     child: TextField(
-                      onChanged: (val) =>
-                          ref.read(searchQueryProvider.notifier).state = val,
+                      onChanged: (value) =>
+                          ref.read(searchQueryProvider.notifier).state = value,
                       decoration: InputDecoration(
                         hintText: "Search coins...",
                         prefixIcon: const Icon(Icons.search),
                         filled: true,
-                        fillColor: isDark ? Colors.grey[900] : Colors.grey[200],
+                        fillColor: isDark ? Colors.grey[900] : Colors.grey[100],
                         border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(16),
+                          borderRadius: BorderRadius.circular(12),
                           borderSide: BorderSide.none,
                         ),
                       ),
                     ),
                   ),
                 ),
+
+                // Navigation Tabs
                 SliverPadding(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 16,
-                    vertical: 12,
+                    vertical: 8,
                   ),
                   sliver: SliverToBoxAdapter(
                     child: Row(
@@ -102,20 +108,42 @@ class HomeScreen extends ConsumerWidget {
                     ),
                   ),
                 ),
-                SliverList(
-                  delegate: SliverChildBuilderDelegate(
-                    (context, index) => CoinTile(coin: filteredCoins[index]),
-                    childCount: filteredCoins.length,
+
+                if (filteredCoins.isEmpty)
+                  const SliverFillRemaining(
+                    child: Center(child: Text("No coins found")),
+                  )
+                else
+                  SliverList(
+                    delegate: SliverChildBuilderDelegate(
+                      (context, index) => CoinTile(coin: filteredCoins[index]),
+                      childCount: filteredCoins.length,
+                    ),
                   ),
-                ),
                 const SliverToBoxAdapter(child: SizedBox(height: 100)),
               ],
             );
           },
-          loading: () => const SliverFillRemaining(
-            child: Center(child: CircularProgressIndicator()),
+          loading: () => SliverList(
+            delegate: SliverChildBuilderDelegate(
+              (context, index) => const ShimmerTile(),
+              childCount: 8,
+            ),
           ),
-          error: (e, s) => Center(child: Text("Error: $e")),
+          error: (err, stack) => Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.wifi_off, size: 50, color: Colors.grey),
+                const SizedBox(height: 10),
+                Text("Error: $err"),
+                TextButton(
+                  onPressed: () => ref.refresh(cryptoListProvider),
+                  child: const Text("Try Again"),
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );
@@ -135,12 +163,12 @@ class HomeScreen extends ConsumerWidget {
               fontWeight: FontWeight.bold,
               color: isActive
                   ? (isDark ? Colors.white : Colors.black)
-                  : Colors.grey[500],
+                  : Colors.grey,
             ),
           ),
           const SizedBox(height: 4),
           AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
+            duration: const Duration(milliseconds: 250),
             height: 3,
             width: isActive ? 24 : 0,
             decoration: BoxDecoration(

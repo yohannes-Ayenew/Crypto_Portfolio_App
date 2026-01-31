@@ -1,10 +1,17 @@
+import 'package:crypto_app/providers/crypto_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../models/crypto_coin.dart';
 import '../providers/favorites_provider.dart';
 import '../widgets/price_chart.dart';
+import '../widgets/candle_chart.dart'; // Import the new candle chart
 import '../core/theme.dart';
+
+// State to track which chart is selected
+final chartTypeProvider = StateProvider<bool>(
+  (ref) => true,
+); // true = Line, false = Candle
 
 class DetailScreen extends ConsumerWidget {
   final CryptoCoin coin;
@@ -13,9 +20,11 @@ class DetailScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final isPositive = coin.changePercentage >= 0;
+    final isLineChart = ref.watch(chartTypeProvider);
     final currencyFormatter = NumberFormat.simpleCurrency();
-    final favorites = ref.watch(favoritesProvider);
-    final isFavorited = favorites.contains(coin.symbol);
+    final bool isDark = Theme.of(context).brightness == Brightness.dark;
+    // Fetch real candles from Binance
+    final candleAsync = ref.watch(candleFetchProvider(coin.symbol));
 
     return Scaffold(
       appBar: AppBar(
@@ -26,44 +35,42 @@ class DetailScreen extends ConsumerWidget {
                 .read(favoritesProvider.notifier)
                 .toggleFavorite(coin.symbol),
             icon: Icon(
-              isFavorited ? Icons.favorite : Icons.favorite_border,
-              color: isFavorited ? Colors.red : null,
+              ref.watch(favoritesProvider).contains(coin.symbol)
+                  ? Icons.favorite
+                  : Icons.favorite_border,
+              color: ref.watch(favoritesProvider).contains(coin.symbol)
+                  ? Colors.red
+                  : null,
             ),
           ),
         ],
       ),
       body: Column(
         children: [
-          const SizedBox(height: 20),
+          const SizedBox(height: 10),
+          // Price Info Header
           Center(
             child: Column(
               children: [
-                // Logo with Glow Effect (from your screenshot)
                 Hero(
                   tag: coin.symbol,
                   child: Container(
-                    width: 100,
-                    height: 100,
-                    decoration: BoxDecoration(
+                    width: 70,
+                    height: 70,
+                    decoration: const BoxDecoration(
                       shape: BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.white.withOpacity(0.2),
-                          blurRadius: 30,
-                          spreadRadius: 10,
-                        ),
-                      ],
+                      color: Colors.white,
                     ),
                     child: ClipOval(
                       child: Image.network(coin.imagePath, fit: BoxFit.cover),
                     ),
                   ),
                 ),
-                const SizedBox(height: 24),
+                const SizedBox(height: 16),
                 Text(
                   currencyFormatter.format(coin.price),
                   style: const TextStyle(
-                    fontSize: 36,
+                    fontSize: 34,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -71,25 +78,74 @@ class DetailScreen extends ConsumerWidget {
                   "${isPositive ? '+' : ''}${coin.changePercentage.toStringAsFixed(2)}%",
                   style: TextStyle(
                     color: isPositive
-                        ? AppTheme.primaryGreen
+                        ? AppTheme.neonGreen
                         : AppTheme.primaryRed,
-                    fontSize: 20,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w500,
                   ),
                 ),
               ],
             ),
           ),
-          const SizedBox(height: 30),
-          // Price Chart
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: PriceChart(
-                prices: coin.priceHistory,
-                isPositive: isPositive, // Chart color will follow this
-              ),
+
+          // --- CHART TYPE SWITCHER ---
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 20),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                _toggleButton(ref, "Line", isLineChart),
+                const SizedBox(width: 10),
+                _toggleButton(ref, "Candle", !isLineChart),
+              ],
             ),
           ),
+
+          // --- DYNAMIC CHART AREA ---
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 10),
+              child: isLineChart
+                  ? PriceChart(
+                      prices: coin.priceHistory,
+                      isPositive: isPositive,
+                    )
+                  : candleAsync.when(
+                      data: (realCandles) =>
+                          CryptoCandleChart(candles: realCandles),
+                      loading: () =>
+                          const Center(child: CircularProgressIndicator()),
+                      error: (err, stack) => Center(
+                        child: Text(
+                          "Candles not available for ${coin.symbol}",
+                          style: const TextStyle(color: Colors.grey),
+                        ),
+                      ),
+                    ),
+            ),
+          ),
+
+          // Stats Row
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                _statItem(
+                  "Low",
+                  "\$${(coin.price * 0.98).toStringAsFixed(2)}",
+                  isDark,
+                ),
+                _statItem(
+                  "High",
+                  "\$${(coin.price * 1.02).toStringAsFixed(2)}",
+                  isDark,
+                ),
+                _statItem("Vol", "2.4B", isDark),
+              ],
+            ),
+          ),
+
           // Buy Button
           Padding(
             padding: const EdgeInsets.all(24.0),
@@ -98,7 +154,7 @@ class DetailScreen extends ConsumerWidget {
               height: 56,
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.primaryGreen,
+                  backgroundColor: AppTheme.neonGreen,
                   foregroundColor: Colors.black,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(16),
@@ -114,6 +170,43 @@ class DetailScreen extends ConsumerWidget {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _toggleButton(WidgetRef ref, String label, bool isActive) {
+    return GestureDetector(
+      onTap: () =>
+          ref.read(chartTypeProvider.notifier).state = (label == "Line"),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+        decoration: BoxDecoration(
+          color: isActive ? AppTheme.neonGreen : Colors.grey.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            color: isActive ? Colors.black : Colors.grey,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _statItem(String label, String value, bool isDark) {
+    return Column(
+      children: [
+        Text(label, style: const TextStyle(color: Colors.grey, fontSize: 12)),
+        const SizedBox(height: 4),
+        Text(
+          value,
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            color: isDark ? Colors.white : Colors.black,
+          ),
+        ),
+      ],
     );
   }
 }

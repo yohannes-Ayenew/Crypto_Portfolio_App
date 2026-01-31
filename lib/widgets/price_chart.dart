@@ -10,33 +10,62 @@ class PriceChart extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Determine min and max Y for scaling
-    double minY = prices.reduce((curr, next) => curr < next ? curr : next);
-    double maxY = prices.reduce((curr, next) => curr > next ? curr : next);
+    // Determine the neon color based on price trend
+    final Color chartColor = isPositive
+        ? AppTheme.neonGreen
+        : AppTheme.primaryRed;
 
     return LineChart(
       LineChartData(
+        // Handles the "Scrubbing" (touch interaction)
+        lineTouchData: LineTouchData(
+          handleBuiltInTouches: true,
+          touchTooltipData: LineTouchTooltipData(
+            // In some versions this is 'tooltipBgColor', in others 'getTooltipColor'
+            // Using a default style is safest across versions
+            tooltipRoundedRadius: 8,
+            getTooltipItems: (List<LineBarSpot> touchedSpots) {
+              return touchedSpots.map((barSpot) {
+                return LineTooltipItem(
+                  '\$${barSpot.y.toStringAsFixed(2)}',
+                  const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
+                );
+              }).toList();
+            },
+          ),
+        ),
+
+        // Clean layout: No grid lines, no side numbers
         gridData: const FlGridData(show: false),
         titlesData: const FlTitlesData(show: false),
         borderData: FlBorderData(show: false),
-        minX: 0,
-        maxX: prices.length.toDouble() - 1,
-        minY: minY * 0.99, // Add some padding below
-        maxY: maxY * 1.01, // Add some padding above
+
         lineBarsData: [
           LineChartBarData(
+            // Convert the price list into chart points (Spots)
             spots: prices.asMap().entries.map((e) {
               return FlSpot(e.key.toDouble(), e.value);
             }).toList(),
-            isCurved: true,
-            color: isPositive ? AppTheme.primaryGreen : AppTheme.primaryRed,
+
+            isCurved: true, // Smooths the line
+            color: chartColor,
             barWidth: 3,
             isStrokeCapRound: true,
-            dotData: const FlDotData(show: false),
+            dotData: const FlDotData(show: false), // Hide circles on points
+            // Add the beautiful gradient glow under the line
             belowBarData: BarAreaData(
               show: true,
-              color: (isPositive ? AppTheme.primaryGreen : AppTheme.primaryRed)
-                  .withOpacity(0.15),
+              gradient: LinearGradient(
+                colors: [
+                  chartColor.withOpacity(0.3),
+                  chartColor.withOpacity(0.0),
+                ],
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+              ),
             ),
           ),
         ],

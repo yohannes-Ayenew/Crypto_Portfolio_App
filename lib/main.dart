@@ -16,27 +16,32 @@ class MyApp extends ConsumerWidget {
 
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'Crypto Portfolio',
       themeMode: themeMode,
-      // LIGHT THEME CONFIG
-
-      // LIGHT THEME CONFIG
+      // --- LIGHT THEME ---
       theme: ThemeData(
         brightness: Brightness.light,
-        scaffoldBackgroundColor: const Color(0xFFF8F9FA),
+        scaffoldBackgroundColor: const Color(0xFFFDFDFD),
         cardColor: Colors.white,
         appBarTheme: const AppBarTheme(
-          backgroundColor: Color(0xFFF8F9FA),
+          backgroundColor: Color(0xFFFDFDFD),
           foregroundColor: Colors.black,
           elevation: 0,
+          titleTextStyle: TextStyle(
+            color: Colors.black,
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        textTheme: const TextTheme(
+          bodyLarge: TextStyle(color: Colors.black),
+          bodyMedium: TextStyle(color: Colors.black),
         ),
       ),
-
-      // DARK THEME CONFIG
+      // --- DARK THEME ---
       darkTheme: ThemeData(
         brightness: Brightness.dark,
         scaffoldBackgroundColor: Colors.black,
-        cardColor: const Color(0xFF1A1A1A),
+        cardColor: const Color(0xFF121212),
         appBarTheme: const AppBarTheme(
           backgroundColor: Colors.black,
           foregroundColor: Colors.white,

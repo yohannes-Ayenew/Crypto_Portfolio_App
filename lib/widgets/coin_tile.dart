@@ -1,26 +1,24 @@
 import 'package:flutter/material.dart';
 import '../models/crypto_coin.dart';
 import '../screens/detail_screen.dart';
+import '../core/theme.dart';
 import 'package:intl/intl.dart';
 
 class CoinTile extends StatelessWidget {
   final CryptoCoin coin;
-
   const CoinTile({super.key, required this.coin});
 
   @override
   Widget build(BuildContext context) {
     final isPositive = coin.changePercentage >= 0;
+    final bool isDark = Theme.of(context).brightness == Brightness.dark;
     final currencyFormatter = NumberFormat.simpleCurrency();
 
     return ListTile(
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => DetailScreen(coin: coin)),
-        );
-      },
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      onTap: () => Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => DetailScreen(coin: coin)),
+      ),
       leading: Hero(
         tag: coin.symbol,
         child: Container(
@@ -29,14 +27,15 @@ class CoinTile extends StatelessWidget {
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             color: Colors.white,
-            border: Border.all(color: Colors.grey.shade200),
+            border: Border.all(
+              color: isDark ? Colors.transparent : Colors.grey.shade200,
+            ),
           ),
           child: ClipOval(
             child: Image.network(coin.imagePath, fit: BoxFit.cover),
           ),
         ),
       ),
-      // Automatically uses correct theme color for title and trailing text
       title: Text(
         coin.name,
         style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 17),
@@ -53,8 +52,9 @@ class CoinTile extends StatelessWidget {
           Text(
             "${isPositive ? '+' : ''}${coin.changePercentage.toStringAsFixed(2)}%",
             style: TextStyle(
-              color: isPositive ? Colors.green : Colors.red,
+              color: isPositive ? AppTheme.primaryGreen : AppTheme.primaryRed,
               fontSize: 13,
+              fontWeight: FontWeight.bold,
             ),
           ),
         ],

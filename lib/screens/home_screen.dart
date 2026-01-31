@@ -16,17 +16,14 @@ class HomeScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final cryptoAsync = ref.watch(cryptoListProvider);
-    final favorites = ref.watch(favoritesProvider);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final showFavoritesOnly = ref.watch(showFavoritesOnlyProvider);
     final searchQuery = ref.watch(searchQueryProvider);
-    final bool isDark = Theme.of(context).brightness == Brightness.dark;
+    final favorites = ref.watch(favoritesProvider);
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
-          "Crypto Portfolio",
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
+        title: const Text("Crypto Portfolio"),
         actions: [
           IconButton(
             onPressed: () => Navigator.push(
@@ -38,7 +35,7 @@ class HomeScreen extends ConsumerWidget {
         ],
       ),
       body: RefreshIndicator(
-        color: AppTheme.primaryGreen,
+        color: AppTheme.neonGreen,
         onRefresh: () => ref.refresh(cryptoListProvider.future),
         child: cryptoAsync.when(
           data: (allCoins) {
@@ -47,49 +44,48 @@ class HomeScreen extends ConsumerWidget {
                 : allCoins;
 
             if (searchQuery.isNotEmpty) {
-              filteredCoins = filteredCoins.where((coin) {
-                return coin.name.toLowerCase().contains(
-                      searchQuery.toLowerCase(),
-                    ) ||
-                    coin.symbol.toLowerCase().contains(
-                      searchQuery.toLowerCase(),
-                    );
-              }).toList();
+              filteredCoins = filteredCoins
+                  .where(
+                    (coin) =>
+                        coin.name.toLowerCase().contains(
+                          searchQuery.toLowerCase(),
+                        ) ||
+                        coin.symbol.toLowerCase().contains(
+                          searchQuery.toLowerCase(),
+                        ),
+                  )
+                  .toList();
             }
 
             return CustomScrollView(
               slivers: [
                 const SliverToBoxAdapter(child: PortfolioCard()),
-
-                // Search Bar Section
                 SliverToBoxAdapter(
                   child: Padding(
                     padding: const EdgeInsets.symmetric(
-                      horizontal: 16.0,
-                      vertical: 12,
+                      horizontal: 16,
+                      vertical: 8,
                     ),
                     child: TextField(
-                      onChanged: (value) =>
-                          ref.read(searchQueryProvider.notifier).state = value,
+                      onChanged: (val) =>
+                          ref.read(searchQueryProvider.notifier).state = val,
                       decoration: InputDecoration(
                         hintText: "Search coins...",
                         prefixIcon: const Icon(Icons.search),
                         filled: true,
-                        fillColor: isDark ? Colors.grey[900] : Colors.grey[100],
+                        fillColor: isDark ? Colors.grey[900] : Colors.grey[200],
                         border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(16),
                           borderSide: BorderSide.none,
                         ),
                       ),
                     ),
                   ),
                 ),
-
-                // Navigation Tabs
                 SliverPadding(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 16,
-                    vertical: 8,
+                    vertical: 12,
                   ),
                   sliver: SliverToBoxAdapter(
                     child: Row(
@@ -106,7 +102,6 @@ class HomeScreen extends ConsumerWidget {
                     ),
                   ),
                 ),
-
                 SliverList(
                   delegate: SliverChildBuilderDelegate(
                     (context, index) => CoinTile(coin: filteredCoins[index]),
@@ -120,7 +115,7 @@ class HomeScreen extends ConsumerWidget {
           loading: () => const SliverFillRemaining(
             child: Center(child: CircularProgressIndicator()),
           ),
-          error: (err, stack) => Center(child: Text("Error: $err")),
+          error: (e, s) => Center(child: Text("Error: $e")),
         ),
       ),
     );
@@ -140,16 +135,16 @@ class HomeScreen extends ConsumerWidget {
               fontWeight: FontWeight.bold,
               color: isActive
                   ? (isDark ? Colors.white : Colors.black)
-                  : Colors.grey,
+                  : Colors.grey[500],
             ),
           ),
           const SizedBox(height: 4),
           AnimatedContainer(
-            duration: const Duration(milliseconds: 250),
+            duration: const Duration(milliseconds: 200),
             height: 3,
-            width: isActive ? 24 : 0, // Neon underline fixed width
+            width: isActive ? 24 : 0,
             decoration: BoxDecoration(
-              color: AppTheme.primaryGreen,
+              color: AppTheme.neonGreen,
               borderRadius: BorderRadius.circular(2),
             ),
           ),

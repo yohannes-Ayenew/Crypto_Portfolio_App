@@ -1,17 +1,17 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-// 1. Provider for the FirebaseAuth instance
+// 1. Get the Firebase Instance
 final firebaseAuthProvider = Provider<FirebaseAuth>((ref) {
   return FirebaseAuth.instance;
 });
 
-// 2. StreamProvider to listen to auth state changes (logged in/out)
+// 2. The "Listener": This watches if the user logs in or out
 final authStateProvider = StreamProvider<User?>((ref) {
   return ref.watch(firebaseAuthProvider).authStateChanges();
 });
 
-// 3. Auth Service to handle Logic
+// 3. The "Actions": Login, Sign Up, and Logout logic
 class AuthRepository {
   final FirebaseAuth _auth;
   AuthRepository(this._auth);

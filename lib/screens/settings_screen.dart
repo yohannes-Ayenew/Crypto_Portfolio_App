@@ -1,3 +1,4 @@
+import 'package:crypto_app/providers/auth_provider.dart';
 import 'package:crypto_app/widgets/stylish_app_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -73,6 +74,16 @@ class SettingsScreen extends ConsumerWidget {
             leading: const Icon(Icons.help_outline, color: AppTheme.neonGreen),
             title: const Text("Help Center"),
             onTap: () {},
+          ),
+          ListTile(
+            leading: const Icon(Icons.logout, color: Colors.redAccent),
+            title: const Text(
+              "Log Out",
+              style: TextStyle(color: Colors.redAccent),
+            ),
+            onTap: () {
+              ref.read(authRepositoryProvider).signOut();
+            },
           ),
           ListTile(
             leading: const Icon(Icons.info_outline, color: AppTheme.neonGreen),

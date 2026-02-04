@@ -1,9 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'providers/theme_provider.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart'; // GENERATED FILE
 import 'screens/main_screen.dart';
+import 'screens/login_screen.dart';
+import 'providers/auth_provider.dart';
+import 'providers/theme_provider.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  // Initialize Firebase
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   runApp(const ProviderScope(child: MyApp()));
 }
 
@@ -13,42 +20,31 @@ class MyApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final themeMode = ref.watch(themeProvider);
+    final authState = ref.watch(authStateProvider);
 
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       themeMode: themeMode,
-      // --- LIGHT THEME ---
       theme: ThemeData(
         brightness: Brightness.light,
-        scaffoldBackgroundColor: const Color(0xFFFDFDFD),
-        cardColor: Colors.white,
-        appBarTheme: const AppBarTheme(
-          backgroundColor: Color(0xFFFDFDFD),
-          foregroundColor: Colors.black,
-          elevation: 0,
-          titleTextStyle: TextStyle(
-            color: Colors.black,
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        textTheme: const TextTheme(
-          bodyLarge: TextStyle(color: Colors.black),
-          bodyMedium: TextStyle(color: Colors.black),
-        ),
+        scaffoldBackgroundColor: Colors.white,
       ),
-      // --- DARK THEME ---
       darkTheme: ThemeData(
         brightness: Brightness.dark,
         scaffoldBackgroundColor: Colors.black,
-        cardColor: const Color(0xFF121212),
-        appBarTheme: const AppBarTheme(
-          backgroundColor: Colors.black,
-          foregroundColor: Colors.white,
-          elevation: 0,
-        ),
       ),
-      home: const MainScreen(),
+
+      // AUTO-SWITCH LOGIC
+      home: authState.when(
+        data: (user) {
+          if (user != null)
+            return const MainScreen(); // If logged in, go to home
+          return const LoginScreen(); // If not, show login
+        },
+        loading: () =>
+            const Scaffold(body: Center(child: CircularProgressIndicator())),
+        error: (e, s) => Scaffold(body: Center(child: Text("Auth Error: $e"))),
+      ),
     );
   }
 }

@@ -1,31 +1,46 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:crypto_app/providers/auth_provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
-// This notifier manages a list of favorite coin symbols (e.g., ['BTC', 'ETH'])
 class FavoritesNotifier extends StateNotifier<List<String>> {
-  FavoritesNotifier() : super([]) {
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final String? _uid;
+
+  FavoritesNotifier(this._uid) : super([]) {
     _loadFavorites();
   }
 
-  // Load saved favorites from phone memory on startup
+  // Load favorites from the Cloud (Firestore)
   Future<void> _loadFavorites() async {
-    final prefs = await SharedPreferences.getInstance();
-    state = prefs.getStringList('favorite_coins') ?? [];
+    if (_uid == null) return;
+
+    final doc = await _firestore.collection('users').doc(_uid).get();
+    if (doc.exists) {
+      final List<dynamic> favs = doc.data()?['watchlist'] ?? [];
+      state = favs.cast<String>();
+    }
   }
 
-  // Toggle favorite status
+  // Toggle favorite in the Cloud
   Future<void> toggleFavorite(String symbol) async {
-    final prefs = await SharedPreferences.getInstance();
+    if (_uid == null) return;
+
     if (state.contains(symbol)) {
       state = state.where((s) => s != symbol).toList();
     } else {
       state = [...state, symbol];
     }
-    await prefs.setStringList('favorite_coins', state);
+
+    // Update Firestore
+    await _firestore.collection('users').doc(_uid).set({
+      'watchlist': state,
+    }, SetOptions(merge: true));
   }
 }
 
+// We use the User UID from the Auth State to initialize favorites
 final favoritesProvider =
     StateNotifierProvider<FavoritesNotifier, List<String>>((ref) {
-      return FavoritesNotifier();
+      final user = ref.watch(authStateProvider).value;
+      return FavoritesNotifier(user?.uid);
     });

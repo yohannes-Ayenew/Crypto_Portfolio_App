@@ -144,6 +144,64 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         ),
                 ),
               ),
+              const SizedBox(height: 20),
+              const Row(
+                children: [
+                  Expanded(child: Divider()),
+                  Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 16),
+                    child: Text("OR", style: TextStyle(color: Colors.grey)),
+                  ),
+                  Expanded(child: Divider()),
+                ],
+              ),
+              const SizedBox(height: 20),
+
+              // --- GOOGLE BUTTON ---
+              SizedBox(
+                width: double.infinity,
+                height: 56,
+                child: OutlinedButton.icon(
+                  style: OutlinedButton.styleFrom(
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    side: BorderSide(
+                      color: isDark ? Colors.grey[800]! : Colors.grey[300]!,
+                    ),
+                  ),
+                  icon: Image.network(
+                    'https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg', // More stable Google URL
+                    height: 24,
+                    // --- THIS FIXES THE OVERFLOW ---
+                    errorBuilder: (context, error, stackTrace) {
+                      return const Icon(
+                        Icons.account_circle,
+                        color: Colors.grey,
+                      ); // Fallback icon
+                    },
+                  ),
+                  label: Text(
+                    "Continue with Google",
+                    style: TextStyle(
+                      color: isDark ? Colors.white : Colors.black,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  onPressed: () async {
+                    try {
+                      await ref.read(authRepositoryProvider).signInWithGoogle();
+                    } catch (e) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(e.toString()),
+                          backgroundColor: Colors.red,
+                        ),
+                      );
+                    }
+                  },
+                ),
+              ),
 
               TextButton(
                 onPressed: () => setState(() => _isLogin = !_isLogin),

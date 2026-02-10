@@ -16,8 +16,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+
   bool _isLogin = true;
   bool _isLoading = false;
+  bool _isGoogleLoading = false;
 
   // 2. Validation Logic
   String? _validateEmail(String? value) {
@@ -34,7 +36,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     return null;
   }
 
-  // 3. Submit Logic
+  // 3. Email/Password Submit Logic
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -57,10 +59,30 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString()), backgroundColor: Colors.red),
+        SnackBar(
+          content: Text(e.toString().replaceAll("Exception: ", "")),
+          backgroundColor: Colors.red,
+        ),
       );
     } finally {
       if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  // 4. Google Sign-In Logic
+  Future<void> _handleGoogleSignIn() async {
+    setState(() => _isGoogleLoading = true);
+    try {
+      await ref.read(authRepositoryProvider).signInWithGoogle();
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(e.toString().replaceAll("Exception: ", "")),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _isGoogleLoading = false);
     }
   }
 
@@ -74,13 +96,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         secondWord: _isLogin ? "LOGIN" : "ACCOUNT",
       ),
       body: SingleChildScrollView(
-        // Prevents "Bottom Overflow" errors when keyboard opens
         padding: const EdgeInsets.all(24.0),
         child: Form(
-          key: _formKey, // Attach the form key
+          key: _formKey,
           child: Column(
             children: [
               const SizedBox(height: 40),
+
               // EMAIL FIELD
               TextFormField(
                 controller: _emailController,
@@ -93,6 +115,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 ),
               ),
               const SizedBox(height: 16),
+
               // PASSWORD FIELD
               TextFormField(
                 controller: _passwordController,
@@ -120,7 +143,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
               const SizedBox(height: 20),
 
-              // SUBMIT BUTTON
+              // SUBMIT BUTTON (Email/Password)
               SizedBox(
                 width: double.infinity,
                 height: 56,
@@ -132,9 +155,16 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       borderRadius: BorderRadius.circular(16),
                     ),
                   ),
-                  onPressed: _isLoading ? null : _submit,
+                  onPressed: (_isLoading || _isGoogleLoading) ? null : _submit,
                   child: _isLoading
-                      ? const CircularProgressIndicator(color: Colors.black)
+                      ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(
+                            color: Colors.black,
+                            strokeWidth: 2,
+                          ),
+                        )
                       : Text(
                           _isLogin ? "Login" : "Sign Up",
                           style: const TextStyle(
@@ -144,20 +174,29 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         ),
                 ),
               ),
-              const SizedBox(height: 20),
-              const Row(
+
+              const SizedBox(height: 24),
+
+              // DIVIDER "OR"
+              Row(
                 children: [
-                  Expanded(child: Divider()),
+                  const Expanded(child: Divider()),
                   Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 16),
-                    child: Text("OR", style: TextStyle(color: Colors.grey)),
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: Text(
+                      "OR",
+                      style: TextStyle(
+                        color: isDark ? Colors.grey : Colors.grey[600],
+                      ),
+                    ),
                   ),
-                  Expanded(child: Divider()),
+                  const Expanded(child: Divider()),
                 ],
               ),
-              const SizedBox(height: 20),
 
-              // --- GOOGLE BUTTON ---
+              const SizedBox(height: 24),
+
+              // GOOGLE BUTTON
               SizedBox(
                 width: double.infinity,
                 height: 56,
@@ -170,39 +209,37 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       color: isDark ? Colors.grey[800]! : Colors.grey[300]!,
                     ),
                   ),
-                  icon: Image.network(
-                    'https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg', // More stable Google URL
-                    height: 24,
-                    // --- THIS FIXES THE OVERFLOW ---
-                    errorBuilder: (context, error, stackTrace) {
-                      return const Icon(
-                        Icons.account_circle,
-                        color: Colors.grey,
-                      ); // Fallback icon
-                    },
-                  ),
+                  icon: _isGoogleLoading
+                      ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : Image.network(
+                          'https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg',
+                          height: 24,
+                          errorBuilder: (context, error, stackTrace) =>
+                              const Icon(
+                                Icons.account_circle,
+                                color: Colors.grey,
+                              ),
+                        ),
                   label: Text(
-                    "Continue with Google",
+                    _isGoogleLoading ? "Connecting..." : "Continue with Google",
                     style: TextStyle(
                       color: isDark ? Colors.white : Colors.black,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  onPressed: () async {
-                    try {
-                      await ref.read(authRepositoryProvider).signInWithGoogle();
-                    } catch (e) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(e.toString()),
-                          backgroundColor: Colors.red,
-                        ),
-                      );
-                    }
-                  },
+                  onPressed: (_isLoading || _isGoogleLoading)
+                      ? null
+                      : _handleGoogleSignIn,
                 ),
               ),
 
+              const SizedBox(height: 16),
+
+              // TOGGLE LOGIN/SIGNUP
               TextButton(
                 onPressed: () => setState(() => _isLogin = !_isLogin),
                 child: Text(
@@ -251,14 +288,23 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           ),
           TextButton(
             onPressed: () async {
-              await ref
-                  .read(authRepositoryProvider)
-                  .resetPassword(emailResetController.text);
-              if (mounted) {
-                Navigator.pop(context);
+              try {
+                await ref
+                    .read(authRepositoryProvider)
+                    .resetPassword(emailResetController.text.trim());
+                if (mounted) {
+                  Navigator.pop(context);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text("Reset link sent to your email"),
+                    ),
+                  );
+                }
+              } catch (e) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text("Reset link sent to your email"),
+                  SnackBar(
+                    content: Text(e.toString()),
+                    backgroundColor: Colors.red,
                   ),
                 );
               }

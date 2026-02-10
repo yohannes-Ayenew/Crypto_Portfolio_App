@@ -9,7 +9,7 @@ class AuthRepository {
   // FIXED: Pass the specific Web Client ID here
   final GoogleSignIn _googleSignIn = GoogleSignIn(
     clientId: kIsWeb
-        ? '614082499515-xxxxxxxxxxxxxxxx.apps.googleusercontent.com'
+        ? '614082499515-nbculgm01tcnoad1e9msd3lek8g70qld.apps.googleusercontent.com'
         : null,
   );
 
